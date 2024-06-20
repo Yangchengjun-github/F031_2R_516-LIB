@@ -148,7 +148,7 @@ int main(void)
 
     OpaHandle.Init.Part = OPA2;
     HAL_OPA_Init(&OpaHandle);
-    // HAL_OPA_Start(&OpaHandle);
+    HAL_OPA_Start(&OpaHandle);
 __HAL_RCC_HDIV_CLK_ENABLE(); 
     APP_AdcConfig();
 HAL_ADC_Start_DMA(&AdcHandle,gADCxConvertedData,7);

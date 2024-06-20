@@ -31,8 +31,8 @@ void CCU80_IO_GPIO_init(void);
 
 //==============================================================================
 #define TWO_PI (2.0f * 3.1415926535f)
-#define V_LIMIT (6.0f)
-#define DELTA_T (0.00005f)
+#define V_LIMIT (4.0f)
+#define DELTA_T (0.001f)
 //==============================================================================
 uint16_t pwm_period = 1999;
 
@@ -66,7 +66,7 @@ float theta_est;
 //---------------------------------------------------------------------
 float Id_ref = 0.0f;
 float Id_err = 0.0f;
-float Kp_d = 0.04f;
+float Kp_d = 0.8f;
 float Ki_d = 0.02f;
 float sum_d = 0.0f;
 //---------------------------------------------------------------------
@@ -75,8 +75,8 @@ float Eq = 0.0f;
 float speed_est = 0.0f;
 float R = 5.29f;
 float L = 0.001058f;
-float Kp_pll = 1000.0f;
-float Ki_pll = 10.0f;
+float Kp_pll = 100.0f;
+float Ki_pll = 1.0f;
 float sum_pll = 0.0f;
 float theta_err = 0.0f;
 float theta_err_limit = 1.0471f;
@@ -239,21 +239,21 @@ void svpwm(void)
 
     //-----------------------------------------------------------------
     /* 配置通道1 */
-    PWMConfig.Pulse = 1800 - (uint16_t)(1800 * da); /* CC1值为10，占空比=10/50=20% */
+    PWMConfig.Pulse = 36000 - (uint16_t)(36000 * da); /* CC1值为10，占空比=10/50=20% */
     pwmDuty[0] = PWMConfig.Pulse;
     if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &PWMConfig, TIM_CHANNEL_1) != HAL_OK)
     {
         APP_ErrorHandler();
     }
     /* 配置通道2 */
-    PWMConfig.Pulse = 1800 - (uint16_t)(1800 * db);
+    PWMConfig.Pulse = 36000 - (uint16_t)(36000 * db);
     pwmDuty[1] = PWMConfig.Pulse;
     if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &PWMConfig, TIM_CHANNEL_2) != HAL_OK)
     {
         APP_ErrorHandler();
     }
     /* 配置通道3 */
-    PWMConfig.Pulse = 1800 - (uint16_t)(1800 * dc);
+    PWMConfig.Pulse = 36000 - (uint16_t)(36000 * dc);
     pwmDuty[2] = PWMConfig.Pulse;
     if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &PWMConfig, TIM_CHANNEL_3) != HAL_OK)
     {
@@ -327,7 +327,7 @@ void foc_cal(void)
     vadc_ib = gADCxConvertedData[CHANNEL_IV];
     //vadc_ic = gADCxConvertedData[];
 
-    vadc_vpot = gADCxConvertedData[CHANNEL_BUS];
+    
 
     if (opa_cali_flag == 1)
     {
@@ -362,11 +362,7 @@ void foc_cal(void)
         // calc position
         //-----------------------------------------------------
        position_estimate();
-        theta += 0.001f;
-        if(theta >= TWO_PI)
-        {
-            theta -= TWO_PI;
-        }
+      
 #if 1
         //-----------------------------------------------------
         switch (mode)
@@ -422,10 +418,10 @@ void foc_cal(void)
         case 1:
         {
             theta = 0;
-            Id_ref += 0.00005f;
+            Id_ref += 0.0001f;
             Vq = 0;
 
-            if (++delay_cnt >= 4000) // lock time = 2s
+            if (++delay_cnt >= 2000) // lock time = 2s
             {
                 delay_cnt = 0;
                 theta_inc = 0.0f;
@@ -440,14 +436,14 @@ void foc_cal(void)
         //-------------------------------------------------
         case 2:
         {
-            if (++delay_cnt >= 300)
+            if (++delay_cnt >= 30)
             {
                 delay_cnt = 0;
 
                 theta_inc += 0.001f;
-                if (theta_inc >= 0.08f)
+                if (theta_inc >= 0.03f)
                 {
-                    theta_inc = 0.08f;
+                    theta_inc = 0.03f;
                     chk_cnt = 0;
                     ramp_cnt = 0;
                     ramp_val = 0;
@@ -475,7 +471,7 @@ void foc_cal(void)
             //---------------------------------------------
             Id_ref = 0.0f;
 
-            if (++ramp_cnt == 50)
+            if (++ramp_cnt == 5)
             {
                 ramp_cnt = 0;
 
@@ -489,30 +485,31 @@ void foc_cal(void)
                 }
             }
 
-            ramp_val = 2000;
+            vadc_vpot = 0;
 
-            Vq = (395.0f + ramp_val * 3700.0f / 4095.0f) * 6.92820323f / 4096.0f;
+            Vq = -(100.0f + ramp_val * 3700.0f / 4095.0f) * 6.92820323f / 4096.0f;
+            
             //---------------------------------------------
             theta = theta_est;
 
             //---------------------------------------------
             if (++chk_cnt >= 1000)
             {
-                if (Eq < 0.3f)
-                {
-                    mode = 0;
-                    sw1_flag = 0;
-                    sum_d = 0.0f;
-                    Vd = 0.0f;
-                    Vq = 0.0f;
-                    Id_ref = 0.0f;
-                    sum_pll = 0.0f;
-                    speed_est = 0.0f;
+                // if (Eq < 0.003f)
+                // {
+                //     mode = 1;
+                //     sw1_flag = 0;
+                //     sum_d = 0.0f;
+                //     Vd = 0.0f;
+                //     Vq = 0.0f;
+                //     Id_ref = 0.0f;
+                //     sum_pll = 0.0f;
+                //     speed_est = 0.0f;
 
                    
                    
-                    CCU80_IO_GPIO_init();
-                }
+                //     CCU80_IO_GPIO_init();
+                // }
             }
             //---------------------------------------------
             if (sw1_flag)
