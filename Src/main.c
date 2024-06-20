@@ -34,7 +34,11 @@
 #include <stdio.h>
 ADC_HandleTypeDef      AdcHandle;
 DMA_HandleTypeDef      HdmaCh1;
-uint32_t  gADCxConvertedData[4]={0,0,0,0};
+uint32_t  gADCxConvertedData[7]={0,0,0,0};
+
+
+uint32_t adc_temp[7];
+
 //uint8_t ADCxConvertedData[6];
 ADC_ChannelConfTypeDef sConfig;
 TIM_HandleTypeDef        TimHandle;
@@ -109,9 +113,12 @@ CORDIC_HandleTypeDef CordicHandle = {0};
 CORDIC_ConfigTypeDef CordicCfg = {0};
 CORDIC_CalculatedTypeDef CordicCalculate = {0};
 
+OPA_HandleTypeDef OpaHandle;
 
 
 extern uint16_t IQAngle1,IQAngle_motor;
+
+
 
 int main(void)
 {
@@ -130,46 +137,64 @@ int main(void)
 
     /* 使能OPA2*/
     __HAL_RCC_OPA_CLK_ENABLE();
-    OPA->CR=1<<6;
-    OPA->OENR=1<<6;
-   
+    // OPA->CR=1<<6;
+    // OPA->OENR=1<<6;
+
+
+    OpaHandle.Instance = OPA;
+    OpaHandle.Init.Part = OPA1;
+    HAL_OPA_Init(&OpaHandle);
+    HAL_OPA_Start(&OpaHandle);
+
+    OpaHandle.Init.Part = OPA2;
+    HAL_OPA_Init(&OpaHandle);
+    // HAL_OPA_Start(&OpaHandle);
+__HAL_RCC_HDIV_CLK_ENABLE(); 
     APP_AdcConfig();
+HAL_ADC_Start_DMA(&AdcHandle,gADCxConvertedData,7);
+    
+	
+	
     APP_TimConfig();
-    Motor_Pare_init();
-    __HAL_RCC_HDIV_CLK_ENABLE(); 
-    HAL_ADC_Start_DMA(&AdcHandle,gADCxConvertedData,4);
+	
+	HAL_Delay(1000);//延时稳定，进行下面的电流偏置补偿
+   // Motor_Pare_init();
     
     
-  /* Configure PVD */
-  APP_PvdConfig();    
- 
-  /* Enable PVD */
-  HAL_PWR_EnablePVD();  
-  //__HAL_RCC_CORDIC_CLK_ENABLE();
-  //cordic_init();
+    get_current_offset();
 
+    /* Configure PVD */
+    APP_PvdConfig();
 
-  
+    /* Enable PVD */
+    HAL_PWR_EnablePVD();
+    //__HAL_RCC_CORDIC_CLK_ENABLE();
+     //cordic_init();
 
     while (1)
     {
-        if(foc.Cycle_cnt>5000)
-        {
-            foc.Cycle_cnt=0;
-            HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
-        }
-        
-       // printf("%d,%d,%d,%d,%d,%d,%d,%d,%d\n", foc.SinAdc,foc.CosAdc,FocSinCos.uwSitaPu,mc_PLL.SinCosPLL.uwSitaPu,mc_PLL.slWePu.sw.hi,foc.SinCosSita,gADCxConvertedData[3],foc.AdcIb,foc.SysStateId); 
-	// printf("%d,%d,%d,%d,%d,%d\n",gADCxConvertedData[2],gADCxConvertedData[3],foc.Ialfa,foc.Valfa,foc.Ibeta,foc.Vbeta);
+      if (foc.Cycle_cnt > 5000)
+      {
+        foc.Cycle_cnt = 0;
+        //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_10);
+      }
+     // log_out();
+      // printf("%d,%d,%d,%d,%d,%d,%d,%d,%d\n", foc.SinAdc,foc.CosAdc,FocSinCos.uwSitaPu,mc_PLL.SinCosPLL.uwSitaPu,mc_PLL.slWePu.sw.hi,foc.SinCosSita,gADCxConvertedData[3],foc.AdcIb,foc.SysStateId);
+      // printf("%d,%d,%d,%d,%d,%d\n",gADCxConvertedData[2],gADCxConvertedData[3],foc.Ialfa,foc.Valfa,foc.Ibeta,foc.Vbeta);
 
+      // printf("%d,%d,%d,%d,%d\n",foc.SinAdc,foc.CosAdc, FocSinCos.uwSitaPu,IQAngle1,IQAngle_motor);
+      // printf("%d,%d,%d,%d,%d,%d\n",IQAngle_motor,foc.Ialfa,foc.Valfa,foc.Ibeta,foc.Vbeta,FocSinCos.uwSitaPu);
+      // printf("%d,%d\n",IQAngle_motor,FocSinCos.uwSitaPu);
+      // printf("%d,%d,%d,%d,%d\n",mc_stPidIq.Ref,foc.We,foc.WeLPF,mc_stPidSpd.Yk,mc_stPidSpd.ek);
+      // printf("%d,%d,%d\n",IQAngle_motor,IQAngle1,foc.SysStateId);
+      //  printf("%d,%d,%d,%d,%d\n",foc.We,IQAngle_motor,mc_stPidSpd.ek,mc_stPidIq.Ref,foc.WeLPF);
+      // printf("%d,%d\n",foc.SysStateId,foc.MotorErrCode);
 
-	  // printf("%d,%d,%d,%d,%d\n",foc.SinAdc,foc.CosAdc, FocSinCos.uwSitaPu,IQAngle1,IQAngle_motor);  
-	   //printf("%d,%d,%d,%d,%d,%d\n",IQAngle_motor,foc.Ialfa,foc.Valfa,foc.Ibeta,foc.Vbeta,FocSinCos.uwSitaPu);
-	   // printf("%d,%d\n",IQAngle_motor,FocSinCos.uwSitaPu);
-	    //printf("%d,%d,%d,%d,%d\n",mc_stPidIq.Ref,foc.We,foc.WeLPF,mc_stPidSpd.Yk,mc_stPidSpd.ek);
-	    //printf("%d,%d,%d\n",IQAngle_motor,IQAngle1,foc.SysStateId);
-	     printf("%d,%d,%d,%d,%d\n",foc.We,IQAngle_motor,mc_stPidSpd.ek,mc_stPidIq.Ref,foc.WeLPF); 
-		//printf("%d,%d\n",foc.SysStateId,foc.MotorErrCode);
+      //printf("%d,%d\n", gADCxConvertedData[CHANNEL_IU], gADCxConvertedData[CHANNEL_IV]);
+      //printf("%d,%d,%d\n", ia_mea, ib_mea, ic_mea);
+     // printf("%f,%f\n", Ialpha,Ibeta);
+     
+      //printf("%d,%d\n", Id_mea, Iq_mea);
     }
 }
 
@@ -183,7 +208,7 @@ int main(void)
 static void APP_PvdConfig(void)
 {
   /* Enable PWR clock and GPIOB clock */
-  GPIO_InitTypeDef  GPIO_InitStruct;
+  //GPIO_InitTypeDef  GPIO_InitStruct;
   PWR_PVDTypeDef sConfigPVD;
   __HAL_RCC_PWR_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
@@ -425,7 +450,7 @@ static void APP_TimConfig(void)
   PWMConfig.OCNPolarity  = TIM_OCNPOLARITY_HIGH;                                /* OCN通道输出高电平有效 */
   PWMConfig.OCNIdleState = TIM_OCNIDLESTATE_RESET;                              /* 空闲状态OC1N输出低电平 */
   PWMConfig.OCIdleState  = TIM_OCIDLESTATE_RESET;                               /* 空闲状态OC1输出低电平 */	
-	PWMConfig.Pulse = 900;                                               /* CC1值为10，占空比=10/50=20% */
+	PWMConfig.Pulse = 300;                                               /* CC1值为10，占空比=10/50=20% */
   /* 配置通道1 */
   #if 1
   if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &PWMConfig, TIM_CHANNEL_1) != HAL_OK)
@@ -433,13 +458,13 @@ static void APP_TimConfig(void)
     APP_ErrorHandler();
   }
   /* 配置通道2 */
-  PWMConfig.Pulse = 1000;   
+  PWMConfig.Pulse = 300;   
   if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &PWMConfig, TIM_CHANNEL_2) != HAL_OK)
   {
     APP_ErrorHandler();
   }	
   #endif
-    PWMConfig.Pulse = 800;   
+    PWMConfig.Pulse = 300;   
 
   /* 配置通道3 */
   if (HAL_TIM_PWM_ConfigChannel(&TimHandle, &PWMConfig, TIM_CHANNEL_3) != HAL_OK)
@@ -476,7 +501,7 @@ static void APP_TimConfig(void)
   #endif
 
 
-#if 1	
+#if 1
 		  /* 开启通道1输出 */
   if (HAL_TIM_PWM_Start(&TimHandle, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -488,14 +513,14 @@ static void APP_TimConfig(void)
     APP_ErrorHandler();
   }
 
-  #endif
+
 		  /* 开启通道3输出 */
   if (HAL_TIM_PWM_Start(&TimHandle, TIM_CHANNEL_3) != HAL_OK)
   {
     APP_ErrorHandler();
   }
 
-#if 1	
+
 		  /* 开启通道1输出 */
   if (HAL_TIMEx_PWMN_Start(&TimHandle, TIM_CHANNEL_1) != HAL_OK)
   {
@@ -506,19 +531,20 @@ static void APP_TimConfig(void)
   {
     APP_ErrorHandler();
   }
-  #endif	
+	
 		  /* 开启通道3输出 */
   if (HAL_TIMEx_PWMN_Start(&TimHandle, TIM_CHANNEL_3) != HAL_OK)
   {
     APP_ErrorHandler();
-  }	
+  }
+#endif
 
-
-		  /* 开启通道4输出 */
+  /* 开启通道4输出 */
   if (HAL_TIM_PWM_Start(&TimHandle, TIM_CHANNEL_4) != HAL_OK)
   {
     APP_ErrorHandler();
   }	
+
 
     #if 1
     __HAL_TIM_ENABLE_IT(&TimHandle, TIM_IT_UPDATE);/*使能UPDATA中断*/  
@@ -575,7 +601,21 @@ static void APP_AdcConfig()
     sConfig.Rank=ADC_REGULAR_RANK_4;
     sConfig.SamplingTime=ADC_SAMPLETIME_3CYCLES_5;  
     HAL_ADC_ConfigChannel(&AdcHandle,&sConfig);
-  
+
+    sConfig.Channel = ADC_CHANNEL_5;
+    sConfig.Rank = ADC_REGULAR_RANK_5;
+    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES_5;
+    HAL_ADC_ConfigChannel(&AdcHandle, &sConfig);
+
+    sConfig.Channel = ADC_CHANNEL_6;
+    sConfig.Rank = ADC_REGULAR_RANK_6;
+    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES_5;
+    HAL_ADC_ConfigChannel(&AdcHandle, &sConfig);
+
+    sConfig.Channel = ADC_CHANNEL_7;
+    sConfig.Rank = ADC_REGULAR_RANK_7;
+    sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES_5;
+    HAL_ADC_ConfigChannel(&AdcHandle, &sConfig);
 
     if(HAL_ADC_Calibration_Start(&AdcHandle) != HAL_OK)
     {
@@ -618,11 +658,11 @@ void GPIO_init(void)
     __HAL_RCC_GPIOB_CLK_ENABLE();
     __HAL_RCC_GPIOF_CLK_ENABLE();
 
-    /* PA5-CH1 */
-  GPIO_InitStruct.Pin = GPIO_PIN_5;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
+  //   /* PA5-CH1 */
+  // GPIO_InitStruct.Pin = GPIO_PIN_5;
+  // GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  // GPIO_InitStruct.Pull = GPIO_NOPULL;
+  // HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
     
 //    /* PA5-ADC */
 //  GPIO_InitStruct.Pin = GPIO_PIN_5;
@@ -630,6 +670,29 @@ void GPIO_init(void)
 //  GPIO_InitStruct.Pull = GPIO_NOPULL;
 //  HAL_GPIO_Init(GPIOA, &GPIO_InitStruct); 
 
+
+    /* EC11 */
+    GPIO_InitStruct.Pin = GPIO_PIN_3;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(GPIOB,&GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_15;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+    GPIO_InitStruct.Pin = GPIO_PIN_8;
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+    GPIO_InitStruct.Pull = GPIO_PULLUP;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+
+    /* LED */
+    GPIO_InitStruct.Pin = GPIO_PIN_10;
+    GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
     //MD410:
     //PB6-CH3; PF5-CH2; PF8-CH1
@@ -665,6 +728,8 @@ void GPIO_init(void)
     GPIO_InitStruct.Pin = GPIO_PIN_1;
     GPIO_InitStruct.Alternate = GPIO_AF2_TIM1;
     HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
+
+    
 }
 
 void  Motor_Pare_init(void )  // ���������ʼ��

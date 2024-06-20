@@ -105,9 +105,11 @@ void TIM1_BRK_UP_TRG_COM_IRQHandler(void)
  #if 1
 	if(TIM1->SR&0x01)
 	{
-	 if(TIM1->CNT>MOTOR_PWM_TIM1_ISR_TH)
-	 PwmIsrCallback();
-	}
+	//  if(TIM1->CNT>MOTOR_PWM_TIM1_ISR_TH)
+	//  PwmIsrCallback();
+    foc_cal();
+    foc.Cycle_cnt++;
+  }
 #endif
 	TIM1->SR=0;
 }

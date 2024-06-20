@@ -3,16 +3,16 @@
         {
             "name": "Project",
             "includePath": [
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\Inc",
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\Drivers\\BSP\\PY32F031xx_Start_Kit",
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\Drivers\\CMSIS\\Include",
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\Drivers\\CMSIS\\Device\\PY32F031\\Include",
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\Drivers\\PY32F031_HAL_Driver\\Inc",
+                "Inc",
+                "Drivers\\BSP\\PY32F031xx_Start_Kit",
+                "Drivers\\CMSIS\\Include",
+                "Drivers\\CMSIS\\Device\\PY32F031\\Include",
+                "Drivers\\PY32F031_HAL_Driver\\Inc",
                 "C:\\Keil_v5\\ARM\\ARMCC\\include",
                 "C:\\Keil_v5\\ARM\\ARMCC\\include\\rw",
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\MDK-ARM",
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\Src",
-                "c:\\Users\\Yang\\Desktop\\F031_2R_516-LIB-\\F031_2R_516-LIB\\Drivers\\PY32F031_HAL_Driver\\Src"
+                "MDK-ARM",
+                "Src",
+                "Drivers\\PY32F031_HAL_Driver\\Src"
             ],
             "defines": [
                 "USE_HAL_DRIVER",

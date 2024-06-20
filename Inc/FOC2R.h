@@ -171,8 +171,8 @@ typedef struct {
 	     int32_t  Kslide;       
 	     int32_t  Ibeta;  	  
 	     int32_t  IbetaError;  
-	     int32_t  Kslf;         //ÂË²¨Æ÷ÏµÊý
-	     int32_t  E0;	          //»¬Ä¤µÄµçÁ÷Îó²îµÄÏÞ·ùÖµ 0.5
+	     int32_t  Kslf;         //ï¿½Ë²ï¿½ï¿½ï¿½Ïµï¿½ï¿½
+	     int32_t  E0;	          //ï¿½ï¿½Ä¤ï¿½Äµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Þ·ï¿½Öµ 0.5
 	     uint16_t  IQAngle;
 	     int32_t  IQTan;
 	     int16_t  evalue;

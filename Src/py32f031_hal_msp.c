@@ -54,15 +54,15 @@ void HAL_MspInit(void)
   */
 void HAL_TIM_PWM_MspInit(TIM_HandleTypeDef *htim)
 {
-  GPIO_InitTypeDef   GPIO_InitStruct;
+ // GPIO_InitTypeDef   GPIO_InitStruct;
   /* Enable TIM1 clock */
   __HAL_RCC_TIM1_CLK_ENABLE();
   /* Enable GPIOA clock */
   __HAL_RCC_GPIOA_CLK_ENABLE();
  
-  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;        /* Alternate Function Push Pull Mode */
-  GPIO_InitStruct.Pull = GPIO_PULLUP;            /* Pull up */
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
+//  GPIO_InitStruct.Mode = GPIO_MODE_AF_PP;        /* Alternate Function Push Pull Mode */
+//  GPIO_InitStruct.Pull = GPIO_PULLUP;            /* Pull up */
+//  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   #if 0
   /* Initialize GPIOA8 */
   GPIO_InitStruct.Pin = TIMx_GPIO_PIN_CHANNEL1;

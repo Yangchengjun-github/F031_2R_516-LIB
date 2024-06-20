@@ -76,10 +76,26 @@ typedef union{
 	
 #include "FOC2R.h"
 #include "PuyaMath.h"
-	
+#include "foc.h"	
 //extern UART_HandleTypeDef UartHandle;
 
+enum
+{
+  CHANNEL_IV = 0,
+  CHANNEL_IU,
+  CHANNEL_VU,
+  CHANNEL_VV,
+  CHANNEL_BUS,
+  CHANNEL_VW,
+  CHANNEL_,
+};
 
+
+extern TIM_OC_InitTypeDef PWMConfig;
+extern TIM_HandleTypeDef TimHandle;
+extern uint32_t gADCxConvertedData[7]  ;
+
+extern uint32_t adc_temp[7];
 #define   ADCBUGLENGTH 6000
 
 /* Private includes ----------------------------------------------------------*/

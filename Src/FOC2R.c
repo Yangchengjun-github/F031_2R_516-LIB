@@ -42,7 +42,6 @@ uint16_t IQAngle_0,IQAngle_motor1=0;
   */
 int16_t focIqCmd;
 uint32_t focSita;
-extern uint32_t   gADCxConvertedData[4];
 __attribute__((section("RAMCODE")))
 void PUYA_SEMI_MC_FOC2R_Schedule(void)
 {  
