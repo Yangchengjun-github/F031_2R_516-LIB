@@ -141,14 +141,14 @@ int main(void)
     // OPA->OENR=1<<6;
 
 
-    OpaHandle.Instance = OPA;
-    OpaHandle.Init.Part = OPA1;
-    HAL_OPA_Init(&OpaHandle);
-    HAL_OPA_Start(&OpaHandle);
+   OpaHandle.Instance = OPA;
+   OpaHandle.Init.Part = OPA1;
+   HAL_OPA_Init(&OpaHandle);
+   HAL_OPA_Start(&OpaHandle);
 
-    OpaHandle.Init.Part = OPA2;
-    HAL_OPA_Init(&OpaHandle);
-    HAL_OPA_Start(&OpaHandle);
+   OpaHandle.Init.Part = OPA2;
+   HAL_OPA_Init(&OpaHandle);
+   HAL_OPA_Start(&OpaHandle);
 __HAL_RCC_HDIV_CLK_ENABLE(); 
     APP_AdcConfig();
 HAL_ADC_Start_DMA(&AdcHandle,gADCxConvertedData,7);

@@ -66,8 +66,8 @@ float theta_est;
 //---------------------------------------------------------------------
 float Id_ref = 0.0f;
 float Id_err = 0.0f;
-float Kp_d = 0.8f;
-float Ki_d = 0.02f;
+float Kp_d = 1.0f;
+float Ki_d = 0.03f;
 float sum_d = 0.0f;
 //---------------------------------------------------------------------
 float Ed = 0.0f;
@@ -75,8 +75,8 @@ float Eq = 0.0f;
 float speed_est = 0.0f;
 float R = 5.29f;
 float L = 0.001058f;
-float Kp_pll = 100.0f;
-float Ki_pll = 1.0f;
+float Kp_pll = 50.0f;
+float Ki_pll = 5.0f;
 float sum_pll = 0.0f;
 float theta_err = 0.0f;
 float theta_err_limit = 1.0471f;
@@ -89,7 +89,7 @@ float K_svpwm = 1.5f;
 float two_sqrt3 = 1.154700538f;
 float one_sqrt3 = 0.5773502692f;
 //---------------------------------------------------------------------
-volatile uint16_t mode = 1;
+volatile uint16_t mode = 0;
 uint16_t delay_cnt;
 uint16_t ramp_cnt;
 uint16_t ramp_val;
@@ -339,9 +339,9 @@ void foc_cal(void)
         //ic_mea = (int16_t)(ic_offset - vadc_ic);
         ic_mea = (int16_t)(0 - ia_mea - ib_mea);
 
-        ia_mea_f = (float)ia_mea * 0.01220703f;
-        ib_mea_f = (float)ib_mea * 0.01220703f;
-        ic_mea_f = (float)ic_mea * 0.01220703f;
+        ia_mea_f = (float)ia_mea * 0.0038147f;
+        ib_mea_f = (float)ib_mea * 0.0038147f;
+        ic_mea_f = (float)ic_mea * 0.0038147f;
 
         //------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                               -----
         // clarke transform
@@ -373,25 +373,23 @@ void foc_cal(void)
         case 0:
         {
             //---------------------------------------------
-            if (++led_cnt == 1000)
-            {
-                led_cnt = 0;
+            // if (++led_cnt == 1000)
+            // {
+            //     led_cnt = 0;
 
-                if (led_flag)
-                {
-                    led_flag = 0;
+            //     if (led_flag)
+            //     {
+            //         led_flag = 0;
                    
-                }
-                else
-                {
-                    led_flag = 1;
+            //     }
+            //     else
+            //     {
+            //         led_flag = 1;
                    
-                }
-            }
+            //     }
+            // }
             //---------------------------------------------
-            if (sw1_flag)
-            {
-                sw1_flag = 0;
+   
 
                 Id_ref = 0.0f;
                 delay_cnt = 0;
@@ -407,7 +405,7 @@ void foc_cal(void)
                
                
                 mode = 1;
-            }
+
             //---------------------------------------------
         }
         break;
@@ -418,7 +416,7 @@ void foc_cal(void)
         case 1:
         {
             theta = 0;
-            Id_ref += 0.0001f;
+            Id_ref += 0.0002f; // 利用d轴电流对齐
             Vq = 0;
 
             if (++delay_cnt >= 2000) // lock time = 2s
@@ -436,14 +434,14 @@ void foc_cal(void)
         //-------------------------------------------------
         case 2:
         {
-            if (++delay_cnt >= 30)
+            if (++delay_cnt >= 50)
             {
                 delay_cnt = 0;
 
-                theta_inc += 0.001f;
-                if (theta_inc >= 0.03f)
+                theta_inc += 0.0005f;
+                if (theta_inc >= 0.3f)
                 {
-                    theta_inc = 0.03f;
+                    theta_inc = 0.3f;  
                     chk_cnt = 0;
                     ramp_cnt = 0;
                     ramp_val = 0;
@@ -487,29 +485,29 @@ void foc_cal(void)
 
             vadc_vpot = 0;
 
-            Vq = -(100.0f + ramp_val * 3700.0f / 4095.0f) * 6.92820323f / 4096.0f;
+            Vq = (10.0f + ramp_val * 3700.0f / 4095.0f) * 6.92820323f / 4096.0f;
             
             //---------------------------------------------
             theta = theta_est;
 
             //---------------------------------------------
-            if (++chk_cnt >= 1000)
+            if (++chk_cnt >= 3000)
             {
-                // if (Eq < 0.003f)
-                // {
-                //     mode = 1;
-                //     sw1_flag = 0;
-                //     sum_d = 0.0f;
-                //     Vd = 0.0f;
-                //     Vq = 0.0f;
-                //     Id_ref = 0.0f;
-                //     sum_pll = 0.0f;
-                //     speed_est = 0.0f;
+                if (Eq < 0.003f)
+                {
+                    mode = 0;
+                    sw1_flag = 0;
+                    sum_d = 0.0f;
+                    Vd = 0.0f;
+                    Vq = 0.0f;
+                    Id_ref = 0.0f;
+                    sum_pll = 0.0f;
+                    speed_est = 0.0f;
 
                    
                    
-                //     CCU80_IO_GPIO_init();
-                // }
+                    CCU80_IO_GPIO_init();
+                }
             }
             //---------------------------------------------
             if (sw1_flag)
