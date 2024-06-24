@@ -44,15 +44,21 @@ uint16_t pwmDuty[3] = {0};
 
 uint16_t vadc_ia, vadc_ib, vadc_ic, vadc_vpot;
 
+uint8_t isr;
+
 uint32_t adc_isr_flag, opa_cali_flag;
 //==============================================================================
 uint16_t ia_offset, ib_offset, ic_offset;
 int16_t ia_mea, ib_mea, ic_mea;
 
 float ia_mea_f, ib_mea_f, ic_mea_f;
+int32_t ia_mea_l15, ib_mea_l15, ic_mea_l15;
 
 float Ialpha, Ibeta;
+int32_t Ialpha_l27, Ibeta_l27;
 float Id_mea, Iq_mea;
+
+int32_t Id_mea_l27, Iq_mea_l27;
 
 float Valpha = 0.0;
 float Vbeta = 0.0;
@@ -63,6 +69,8 @@ float Vq = 0.0;
 float theta;
 float theta_inc;
 float theta_est;
+
+int32_t theta_est_int;
 //---------------------------------------------------------------------
 float Id_ref = 0.0f;
 float Id_err = 0.0f;
@@ -97,6 +105,12 @@ volatile uint16_t sw1_flag;
 uint16_t chk_cnt;
 uint16_t led_cnt;
 uint16_t led_flag;
+
+/* -------------------------------------------------------------------------- */
+#define SCALE_FACTOR 1024
+#define ANGLE_RES 360 // 假设我们每1度计算一次
+int16_t sin_table[ANGLE_RES];
+int16_t cos_table[ANGLE_RES];
 
 //==============================================================================
 void d_axis_current_loop(void)
@@ -319,17 +333,17 @@ void svpwm(void)
 void foc_cal(void)
 {
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_SET);
+    //isr = 1;
     //---------------------------------------------------------
     adc_isr_flag = 1;
-
     //---------------------------------------------------------
     vadc_ia = gADCxConvertedData[CHANNEL_IU];
     vadc_ib = gADCxConvertedData[CHANNEL_IV];
     //vadc_ic = gADCxConvertedData[];
 
     
-
-    if (opa_cali_flag == 1)
+   if (opa_cali_flag == 1)
+	//if(0)
     {
         //-----------------------------------------------------
         // current measure
@@ -343,25 +357,43 @@ void foc_cal(void)
         ib_mea_f = (float)ib_mea * 0.0038147f;
         ic_mea_f = (float)ic_mea * 0.0038147f;
 
+        //  ia_mea_l15 = ia_mea * 125;
+        //  ib_mea_l15 = ib_mea * 125;
+        //  ic_mea_l15 = ic_mea * 125;
+
         //------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                               -----
         // clarke transform
         //-----------------------------------------------------
-        // Ialpha = (2/3) * (Ia - Ib/2 - Ic/2)
+        //Ialpha = (2/3) * (Ia - Ib/2 - Ic/2)
         Ialpha = 0.6666666667f * (ia_mea_f - 0.5f * (ib_mea_f + ic_mea_f));
 
         // Ibeta = (1/sqrt(3)) * (Ib - Ic)
         Ibeta = 0.5773502692f * (ib_mea_f - ic_mea_f);
 
+        //------------------------------------------------                                                                                                                                                                                                                                                                                                                                                                                               -----
+        // clarke transform
         //-----------------------------------------------------
+        // Ialpha = (2/3) * (Ia - Ib/2 - Ic/2)  X
+         //Ialpha_l27 = 2730 * (ia_mea_l15 - ((ib_mea_l15 + ic_mea_l15) >>1));
+
+        // / Ibeta = (1/sqrt(3)) * (Ib - Ic)
+        // Ibeta_l27 = 2364 * (ib_mea_l15 - ic_mea_l15);
+
+        //--------------------5---------------------------------
         // Park transform
         //-----------------------------------------------------
         Id_mea = cosf(theta_est) * Ialpha + sinf(theta_est) * Ibeta;
         Iq_mea = -sinf(theta_est) * Ialpha + cosf(theta_est) * Ibeta;
 
+        // Id_mea_l27 = (cos_table[theta_est_int % 360] * Ialpha_l27 + sin_table[theta_est_int % 360] * Ibeta_l27)>>10;
+        // Iq_mea_l27 = -(sin_table[theta_est_int % 360] * Ialpha_l27 + cos_table[theta_est_int % 360] * Ibeta_l27) >>10;
+
+
         //-----------------------------------------------------
         // calc position
         //-----------------------------------------------------
        position_estimate();
+         
       
 #if 1
         //-----------------------------------------------------
@@ -438,7 +470,7 @@ void foc_cal(void)
             {
                 delay_cnt = 0;
 
-                theta_inc += 0.0005f;
+                theta_inc += 0.002f;
                 if (theta_inc >= 0.3f)
                 {
                     theta_inc = 0.3f;  
@@ -485,7 +517,7 @@ void foc_cal(void)
 
             vadc_vpot = 0;
 
-            Vq = (10.0f + ramp_val * 3700.0f / 4095.0f) * 6.92820323f / 4096.0f;
+            Vq = (200.0f + ramp_val * 3700.0f / 4095.0f) * 6.92820323f / 4096.0f;
             
             //---------------------------------------------
             theta = theta_est;
@@ -493,7 +525,8 @@ void foc_cal(void)
             //---------------------------------------------
             if (++chk_cnt >= 3000)
             {
-                if (Eq < 0.003f)
+                if(0)
+               // if (Eq < 0.003f)
                 {
                     mode = 0;
                     sw1_flag = 0;
@@ -544,6 +577,8 @@ void foc_cal(void)
             //-------------------------------------------------
         }
 #endif
+
+#if 1
         //-----------------------------------------------------
         // current control
         //-----------------------------------------------------
@@ -554,15 +589,15 @@ void foc_cal(void)
         //-----------------------------------------------------
         // inverse Park transform
         //-----------------------------------------------------
-        Valpha = cosf(theta) * Vd - sinf(theta) * Vq;
-        Vbeta = sinf(theta) * Vd + cosf(theta) * Vq;
+         Valpha = cosf(theta) * Vd - sinf(theta) * Vq;
+         Vbeta = sinf(theta) * Vd + cosf(theta) * Vq;
 
         //-----------------------------------------------------
         // svpwm modulation
         //-----------------------------------------------------
    
         svpwm();
-
+#endif
         //-----------------------------------------------------
     }
 
@@ -575,6 +610,7 @@ void foc_cal(void)
 
     //=========================================================
     HAL_GPIO_WritePin(GPIOA, GPIO_PIN_10, GPIO_PIN_RESET);
+    //isr = 0;
 }
 void log_out(void)
 {
@@ -659,5 +695,13 @@ void delay_ms(uint16_t m)
 //==============================================================================
 
 //==============================================================================
-
+void generate_trig_tables(void)
+{
+    for (int i = 0; i < ANGLE_RES; i++)
+    {
+        double radians = i * (3.141592 / 180);
+        sin_table[i] = (int16_t)(sin(radians) * SCALE_FACTOR);
+        cos_table[i] = (int16_t)(cos(radians) * SCALE_FACTOR);
+    }
+}
 //==============================================================================

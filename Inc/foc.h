@@ -12,5 +12,7 @@ extern float Ialpha, Ibeta;
 extern float Id_mea, Iq_mea;
 extern uint16_t vadc_ia, vadc_ib, vadc_ic, vadc_vpot;
 extern uint16_t pwmDuty[3] ;
+
+void generate_trig_tables(void);
 #endif
 

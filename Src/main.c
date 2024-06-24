@@ -156,7 +156,7 @@ HAL_ADC_Start_DMA(&AdcHandle,gADCxConvertedData,7);
 	
 	
     APP_TimConfig();
-	
+	generate_trig_tables();
 	HAL_Delay(1000);//延时稳定，进行下面的电流偏置补偿
    // Motor_Pare_init();
     
@@ -173,11 +173,11 @@ HAL_ADC_Start_DMA(&AdcHandle,gADCxConvertedData,7);
 
     while (1)
     {
-      if (foc.Cycle_cnt > 5000)
-      {
-        foc.Cycle_cnt = 0;
-        //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_10);
-      }
+      // if (foc.Cycle_cnt > 5000)
+      // {
+      //   foc.Cycle_cnt = 0;
+      //   //HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_10);
+      // }
      // log_out();
       // printf("%d,%d,%d,%d,%d,%d,%d,%d,%d\n", foc.SinAdc,foc.CosAdc,FocSinCos.uwSitaPu,mc_PLL.SinCosPLL.uwSitaPu,mc_PLL.slWePu.sw.hi,foc.SinCosSita,gADCxConvertedData[3],foc.AdcIb,foc.SysStateId);
       // printf("%d,%d,%d,%d,%d,%d\n",gADCxConvertedData[2],gADCxConvertedData[3],foc.Ialfa,foc.Valfa,foc.Ibeta,foc.Vbeta);
@@ -432,7 +432,7 @@ static void APP_TimConfig(void)
   __HAL_RCC_TIM1_CLK_ENABLE();                                       	/* TIM1时钟使能 */
   TimHandle.Instance = TIM1;                                         	/* TIM1 */
   TimHandle.Init.Period            = MOTOR_PWM_TIM1_DUTY-1;                 	/* TIM1重装载值位8000-1 */
-  TimHandle.Init.Prescaler         = 1 - 1;                        		/* 预分频为1000-1 */
+  TimHandle.Init.Prescaler         = 2 - 1;                        		/* 预分频为1000-1 */
   TimHandle.Init.ClockDivision     = TIM_CLOCKDIVISION_DIV1;          /* 时钟不分频 */
   TimHandle.Init.CounterMode       = TIM_COUNTERMODE_CENTERALIGNED3;  /* 向上计数 */
   TimHandle.Init.RepetitionCounter = 0;                               /* 不重复 */
